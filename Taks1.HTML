@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeAlpha Task 1: Language Translation Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-teal-900 via-slate-900 to-indigo-950 min-h-screen text-slate-100 flex flex-col items-center justify-center p-4">
+
+    <div class="w-full max-w-3xl bg-slate-800/80 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-700 p-6 md:p-8">
+        <div class="text-center mb-8">
+            <span class="bg-teal-500/20 text-teal-300 text-xs font-semibold px-3 py-1 rounded-full border border-teal-500/30">CodeAlpha Internship • Task 1</span>
+            <h1 class="text-2xl md:text-3xl font-bold mt-3 text-white">Language Translation Tool</h1>
+            <p class="text-slate-400 text-sm mt-1">Translate text instantly between multiple languages with copy & speech features.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Source Box -->
+            <div class="flex flex-col space-y-3">
+                <div class="flex items-center justify-between">
+                    <label for="sourceText" class="text-sm font-medium text-teal-400 flex items-center gap-2">
+                        <i class="fa-solid fa-pen-to-square"></i> Enter Text
+                    </label>
+                    <select id="sourceLang" class="bg-slate-900 border border-slate-700 text-sm rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-teal-500 focus:outline-none text-slate-200">
+                        <option value="auto">Detect Language</option>
+                        <option value="en" selected>English</option>
+                        <option value="ur">Urdu (اردو)</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="ar">Arabic</option>
+                        <option value="hi">Hindi</option>
+                        <option value="zh">Chinese</option>
+                    </select>
+                </div>
+                <textarea id="sourceText" rows="6" placeholder="Type or paste your text here..." class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-4 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-teal-500 focus:outline-none resize-none transition"></textarea>
+                <div class="flex justify-between items-center text-xs text-slate-400">
+                    <span id="charCount">0 characters</span>
+                    <button onclick="clearText()" class="hover:text-red-400 transition flex items-center gap-1"><i class="fa-solid fa-trash-can"></i> Clear</button>
+                </div>
+            </div>
+
+            <!-- Target Box -->
+            <div class="flex flex-col space-y-3">
+                <div class="flex items-center justify-between">
+                    <label for="targetLang" class="text-sm font-medium text-teal-400 flex items-center gap-2">
+                        <i class="fa-solid fa-language"></i> Translate To
+                    </label>
+                    <select id="targetLang" class="bg-slate-900 border border-slate-700 text-sm rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-teal-500 focus:outline-none text-slate-200">
+                        <option value="ur" selected>Urdu (اردو)</option>
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="ar">Arabic</option>
+                        <option value="hi">Hindi</option>
+                        <option value="zh">Chinese</option>
+                    </select>
+                </div>
+                <div class="relative">
+                    <textarea id="targetText" rows="6" readonly placeholder="Translation will appear here..." class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-4 text-slate-100 placeholder-slate-500 focus:outline-none resize-none transition"></textarea>
+                    <div id="loadingSpinner" class="hidden absolute inset-0 bg-slate-900/60 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400"></div>
+                    </div>
+                </div>
+                <!-- Action Buttons -->
+                <div class="flex justify-between items-center pt-1">
+                    <div class="flex gap-2">
+                        <button onclick="copyTranslation()" title="Copy Translation" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-copy"></i> Copy
+                        </button>
+                        <button onclick="speakTranslation()" title="Text to Speech" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-volume-high"></i> Listen
+                        </button>
+                    </div>
+                    <span id="copyStatus" class="text-xs text-teal-400 opacity-0 transition-opacity">Copied!</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="mt-6">
+            <button onclick="performTranslation()" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-teal-600/30 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Translate Text
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const sourceText = document.getElementById('sourceText');
+        const targetText = document.getElementById('targetText');
+        const sourceLang = document.getElementById('sourceLang');
+        const targetLang = document.getElementById('targetLang');
+        const charCount = document.getElementById('charCount');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const copyStatus = document.getElementById('copyStatus');
+
+        sourceText.addEventListener('input', () => {
+            charCount.textContent = `${sourceText.value.length} characters`;
+        });
+
+        async function performTranslation() {
+            const text = sourceText.value.trim();
+            if (!text) {
+                alert('Please enter some text to translate.');
+                return;
+            }
+
+            const sl = sourceLang.value;
+            const tl = targetLang.value;
+
+            loadingSpinner.classList.remove('hidden');
+
+            try {
+                // Using MyMemory public translation API as a reliable, free option for CodeAlpha task
+                const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sl === 'auto' ? 'en' : sl}|${tl}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data && data.responseData) {
+                    targetText.value = data.responseData.translatedText;
+                } else {
+                    targetText.value = "Translation error occurred. Please try again.";
+                }
+            } catch (error) {
+                console.error(error);
+                targetText.value = "Network error. Please check your connection.";
+            } finally {
+                loadingSpinner.classList.add('hidden');
+            }
+        }
+
+        function clearText() {
+            sourceText.value = '';
+            targetText.value = '';
+            charCount.textContent = '0 characters';
+        }
+
+        function copyTranslation() {
+            if (!targetText.value) return;
+            navigator.clipboard.writeText(targetText.value);
+            copyStatus.classList.remove('opacity-0');
+            setTimeout(() => {
+                copyStatus.classList.add('opacity-0');
+        }, 2000);
+        }
+
+        function speakTranslation() {
+            const text = targetText.value;
+            if (!text) return;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = targetLang.value;
+            window.speechSynthesis.speak(utterance);
+        }
+    </script>
+</body>
+</html>
